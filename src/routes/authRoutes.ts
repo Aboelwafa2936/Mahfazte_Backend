@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
-import { registerUser, loginUser, deleteUser, logoutUser } from "../controllers/authController";
+import { registerUser, loginUser, deleteUser, logoutUser, getCurrentUser } from "../controllers/authController";
 import { body, validationResult } from "express-validator";
 import { protect } from "../middleware/authMiddleware";
 
@@ -31,6 +31,7 @@ router.post("/register", validateRegister, registerUser);
 router.post("/login", validateLogin, loginUser);
 router.post("/logout", logoutUser);
 router.delete("/:id", protect, deleteUser);
+router.get("/me", protect, getCurrentUser);
 
 export default router;
 
