@@ -22,7 +22,7 @@ app.use(helmet());
 // 📌 CORS مع إعدادات الكوكيز
 app.use(cors({
   origin: "http://localhost:5173", // رابط الفرونت
-  credentials: true, // مهم عشان الكوكي يتبعت
+  credentials: true
 }));
 
 // 📌 قراءة JSON من الطلبات

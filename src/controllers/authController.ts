@@ -22,7 +22,7 @@ export const registerUser = async (req: Request, res: Response) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // HTTPS فقط في الإنتاج
-      sameSite: "strict",
+      sameSite: "none" as const,
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 يوم
     });
 
@@ -98,13 +98,13 @@ export const deleteUser = async (req: Request, res: Response) => {
 
 export const getCurrentUser = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user) return res.status(401).json({ message: "Not authorized" });
+    if (!req.user?.id) return res.status(401).json({ message: "Not authorized" });
 
-    const user = await User.findById(req.user).select("-password");
+    const user = await User.findById(req.user.id).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
 
     res.json(user);
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: "Error fetching user data" });
   }
 };
