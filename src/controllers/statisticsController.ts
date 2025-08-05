@@ -2,24 +2,25 @@ import { Response } from "express";
 import { Transaction } from "../models/Transaction";
 import { AuthRequest } from "../types/AuthRequest";
 
-// 📊 إحصائيات بين تاريخين
 export const getStatistics = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Not authorized" });
 
     const { start, end } = req.query;
-
     if (!start || !end) {
       return res.status(400).json({ message: "Please provide start and end dates" });
     }
 
     const startDate = new Date(start as string);
     const endDate = new Date(end as string);
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return res.status(400).json({ message: "Invalid date format" });
+    }
 
     const stats = await Transaction.aggregate([
       {
         $match: {
-          user: req.user._id,
+          user: req.user,
           date: { $gte: startDate, $lte: endDate }
         }
       },
@@ -41,4 +42,5 @@ export const getStatistics = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: "Error fetching transaction stats" });
   }
 };
+
 

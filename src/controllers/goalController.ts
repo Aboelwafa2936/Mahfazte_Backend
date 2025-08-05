@@ -16,7 +16,7 @@ export const addGoal = async (req: AuthRequest, res: Response) => {
     }
 
     const goal = await Goal.create({
-      user: req.user._id,
+      user: req.user,
       title,
       targetAmount,
       currentAmount: 0,
@@ -37,7 +37,7 @@ export const getGoals = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ message: "Not authorized" });
     }
 
-    const goals = await Goal.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const goals = await Goal.find({ user: req.user }).sort({ createdAt: -1 });
     res.json(goals);
   } catch (error) {
     console.error("Error fetching goals:", error);
@@ -57,7 +57,7 @@ export const updateGoal = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "Goal not found" });
     }
 
-    if (goal.user.toString() !== req.user._id.toString()) {
+    if (goal.user.toString() !== req.user.toString()) {
       return res.status(401).json({ message: "Not authorized" });
     }
 
@@ -88,7 +88,7 @@ export const deleteGoal = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "Goal not found" });
     }
 
-    if (goal.user.toString() !== req.user._id.toString()) {
+    if (goal.user.toString() !== req.user.toString()) {
       return res.status(401).json({ message: "Not authorized" });
     }
 

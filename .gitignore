@@ -9,6 +9,10 @@ node_modules/
 dist/
 build/
 
+# Ignore compiled JavaScript in src
+src/**/*.js
+src/**/*.js.map
+
 # TypeScript cache
 *.tsbuildinfo
 

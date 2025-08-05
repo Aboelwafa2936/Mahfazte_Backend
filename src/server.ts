@@ -1,3 +1,4 @@
+import cookieParser  from 'cookie-parser';
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -16,21 +17,30 @@ connectDB();
 const app = express();
 
 // 📌 أمان
-app.use(helmet()); // حماية من XSS و بعض الثغرات
-app.use(cors()); // تفعيل CORS
-app.use(express.json({ limit: "10kb" })); // تحديد حجم البيانات
-app.use(errorHandler);
+app.use(helmet());
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// 📌 CORS مع إعدادات الكوكيز
+app.use(cors({
+  origin: "http://localhost:5173", // رابط الفرونت
+  credentials: true, // مهم عشان الكوكي يتبعت
+}));
 
-// Routes
+// 📌 قراءة JSON من الطلبات
+app.use(express.json({ limit: "10kb" }));
+
+// 📌 قراءة الكوكيز
+app.use(cookieParser());
+
+// 📌 Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/goals", goalRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/statistics", statisticsRoutes);
 
+// 📌 Error Handler في الآخر
+app.use(errorHandler);
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+

@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { Transaction } from "../models/Transaction";
 import { Goal } from "../models/Goal";
 import { AuthRequest } from "../types/AuthRequest";
@@ -8,7 +8,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Not authorized" });
 
-    const userId = req.user._id;
+    const userId = req.user; // userId مباشرة من protect
 
     // 1️⃣ إجمالي المصروفات
     const totalExpenses = await Transaction.aggregate([
