@@ -8,7 +8,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Not authorized" });
 
-    const userId = req.user; // userId مباشرة من protect
+    const userId = req.user;
 
     // 1️⃣ إجمالي المصروفات
     const totalExpenses = await Transaction.aggregate([
@@ -22,18 +22,25 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
       { $group: { _id: null, total: { $sum: "$amount" } } }
     ]);
 
-    // 3️⃣ نسبة التقدم في الأهداف
+    // 3️⃣ إجمالي الديون
+    const totalDebts = await Transaction.aggregate([
+      { $match: { user: userId, type: "debt" } },
+      { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]);
+
+    // 4️⃣ نسبة التقدم في الأهداف
     const goals = await Goal.find({ user: userId });
     const goalsProgress = goals.map(goal => ({
       title: goal.title,
       targetAmount: goal.targetAmount,
       currentAmount: goal.currentAmount,
-      progress: Math.min((goal.currentAmount / goal.targetAmount) * 100, 100) // نسبة %
+      progress: Math.min((goal.currentAmount / goal.targetAmount) * 100, 100)
     }));
 
     res.json({
       totalExpenses: totalExpenses[0]?.total || 0,
       totalIncome: totalIncome[0]?.total || 0,
+      totalDebts: totalDebts[0]?.total || 0,
       goalsProgress
     });
 
@@ -41,3 +48,4 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: "Error fetching dashboard stats" });
   }
 };
+

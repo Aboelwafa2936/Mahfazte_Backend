@@ -13,9 +13,10 @@ export const getTransactionsWithFilters = async (req: AuthRequest, res: Response
 
     const filter: any = { user: userId };
 
+    // ✅ السماح بالـ debt بجانب income و expense
     if (req.query.type) {
       const type = req.query.type.toString().toLowerCase();
-      if (!["income", "expense"].includes(type)) {
+      if (!["income", "expense", "debt"].includes(type)) {
         return res.status(400).json({ message: "Invalid transaction type" });
       }
       filter.type = type;
@@ -48,4 +49,5 @@ export const getTransactionsWithFilters = async (req: AuthRequest, res: Response
     res.status(500).json({ message: "Error fetching transactions" });
   }
 };
+
 
