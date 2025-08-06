@@ -3,9 +3,16 @@ import jwt from "jsonwebtoken";
 import { User } from "../models/User";
 import { AuthRequest } from "../types/AuthRequest";
 
-// دالة إنشاء التوكين
 const generateToken = (id: string) => {
   return jwt.sign({ id }, process.env.JWT_SECRET as string, { expiresIn: "30d" });
+};
+
+// 📌 إعدادات الكوكي統一ة
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production", // HTTPS في الإنتاج
+  sameSite: "none" as const, // لازم تكون none علشان cross-site
+  maxAge: 30 * 24 * 60 * 60 * 1000 // 30 يوم
 };
 
 // تسجيل حساب جديد
@@ -18,13 +25,7 @@ export const registerUser = async (req: Request, res: Response) => {
     const user = await User.create({ name, email, password });
     const token = generateToken(user.id);
 
-    // إرسال التوكين كـ HttpOnly Cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // HTTPS فقط في الإنتاج
-      sameSite: "none" as const,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 يوم
-    });
+    res.cookie("token", token, cookieOptions);
 
     res.status(201).json({
       message: "Registration successful",
@@ -51,12 +52,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
     const token = generateToken(user.id);
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("token", token, cookieOptions);
 
     res.json({
       message: "Login successful",
@@ -76,7 +72,7 @@ export const logoutUser = (req: Request, res: Response) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "none"
   });
   res.json({ message: "Logged out successfully" });
 };
@@ -96,6 +92,7 @@ export const deleteUser = async (req: Request, res: Response) => {
   }
 };
 
+// إحضار المستخدم الحالي
 export const getCurrentUser = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user?.id) return res.status(401).json({ message: "Not authorized" });
@@ -108,4 +105,3 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: "Error fetching user data" });
   }
 };
-
