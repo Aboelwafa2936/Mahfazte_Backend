@@ -64,6 +64,9 @@ export const getAllTransactions = async (req: AuthRequest, res: Response) => {
 
 // 📌 إضافة معاملة جديدة
 export const addTransaction = async (req: AuthRequest, res: Response) => {
+  console.log("Incoming transaction:", req.body);
+  console.log("User from token:", req.user);
+
   try {
     if (!req.user) return res.status(401).json({ message: "Not authorized" });
 
@@ -71,10 +74,6 @@ export const addTransaction = async (req: AuthRequest, res: Response) => {
 
     if (!type || !amount || !date) {
       return res.status(400).json({ message: "Type, amount, and date are required" });
-    }
-
-    if (!["income", "expense", "debt"].includes(type.toLowerCase())) {
-      return res.status(400).json({ message: "Invalid transaction type" });
     }
 
     const transaction = new Transaction({
@@ -91,9 +90,11 @@ export const addTransaction = async (req: AuthRequest, res: Response) => {
     await transaction.save();
     res.status(201).json(transaction);
   } catch (error) {
+    console.error("Error adding transaction:", error);
     res.status(500).json({ message: "Error adding transaction" });
   }
 };
+
 
 // 📌 تعديل معاملة
 export const updateTransaction = async (req: AuthRequest, res: Response) => {
