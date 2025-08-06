@@ -50,4 +50,86 @@ export const getTransactionsWithFilters = async (req: AuthRequest, res: Response
   }
 };
 
+// 📌 جلب كل المعاملات
+export const getAllTransactions = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) return res.status(401).json({ message: "Not authorized" });
+
+    const transactions = await Transaction.find({ user: req.user }).sort({ date: -1 });
+    res.json({ transactions });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching transactions" });
+  }
+};
+
+// 📌 إضافة معاملة جديدة
+export const addTransaction = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) return res.status(401).json({ message: "Not authorized" });
+
+    const { type, amount, date, title, source, lender, category } = req.body;
+
+    if (!type || !amount || !date) {
+      return res.status(400).json({ message: "Type, amount, and date are required" });
+    }
+
+    if (!["income", "expense", "debt"].includes(type.toLowerCase())) {
+      return res.status(400).json({ message: "Invalid transaction type" });
+    }
+
+    const transaction = new Transaction({
+      user: req.user,
+      type,
+      amount,
+      date,
+      title,
+      source,
+      lender,
+      category
+    });
+
+    await transaction.save();
+    res.status(201).json(transaction);
+  } catch (error) {
+    res.status(500).json({ message: "Error adding transaction" });
+  }
+};
+
+// 📌 تعديل معاملة
+export const updateTransaction = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) return res.status(401).json({ message: "Not authorized" });
+
+    const transaction = await Transaction.findOneAndUpdate(
+      { _id: req.params.id, user: req.user },
+      req.body,
+      { new: true }
+    );
+
+    if (!transaction) return res.status(404).json({ message: "Transaction not found" });
+
+    res.json(transaction);
+  } catch (error) {
+    res.status(500).json({ message: "Error updating transaction" });
+  }
+};
+
+// 📌 حذف معاملة
+export const deleteTransaction = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) return res.status(401).json({ message: "Not authorized" });
+
+    const transaction = await Transaction.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user
+    });
+
+    if (!transaction) return res.status(404).json({ message: "Transaction not found" });
+
+    res.json({ message: "Transaction deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting transaction" });
+  }
+};
+
 

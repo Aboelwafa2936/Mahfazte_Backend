@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import { protect } from "../middleware/authMiddleware";
-import { getTransactionsWithFilters } from "../controllers/transactionController";
+import { addTransaction, deleteTransaction, getAllTransactions, getTransactionsWithFilters, updateTransaction } from "../controllers/transactionController";
 import { query, validationResult } from "express-validator";
 
 const router = express.Router();
@@ -42,5 +42,17 @@ router.get(
   },
   getTransactionsWithFilters
 );
+// ✅ جلب كل المعاملات
+router.get("/", protect, getAllTransactions);
+
+// ✅ إضافة معاملة جديدة
+router.post("/", protect, addTransaction);
+
+// ✅ تعديل معاملة
+router.put("/:id", protect, updateTransaction);
+
+// ✅ حذف معاملة
+router.delete("/:id", protect, deleteTransaction);
+
 
 export default router;
