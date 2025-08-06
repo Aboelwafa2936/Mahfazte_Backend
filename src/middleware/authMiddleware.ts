@@ -8,7 +8,7 @@ export const protect = (req: AuthRequest, res: Response, next: NextFunction) => 
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
-    req.user = { id: decoded.id }; // ✅ خليها كده
+    req.user = decoded.id; // ✅ خليها كده
     next();
   } catch (error) {
     res.status(401).json({ message: "Not authorized, token failed" });

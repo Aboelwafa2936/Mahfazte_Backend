@@ -80,7 +80,7 @@ export const addTransaction = async (req: AuthRequest, res: Response) => {
       user: req.user,
       type,
       amount,
-      date,
+      date: new Date(date),
       title,
       source,
       lender,
