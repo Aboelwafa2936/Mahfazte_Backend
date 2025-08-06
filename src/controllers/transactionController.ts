@@ -4,9 +4,9 @@ import { AuthRequest } from "../types/AuthRequest";
 
 export const getTransactionsWithFilters = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user) return res.status(401).json({ message: "Not authorized" });
+    if (!req.user?.id) return res.status(401).json({ message: "Not authorized" });
 
-    const userId = req.user;
+    const userId = req.user.id;
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -53,9 +53,9 @@ export const getTransactionsWithFilters = async (req: AuthRequest, res: Response
 // 📌 جلب كل المعاملات
 export const getAllTransactions = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user) return res.status(401).json({ message: "Not authorized" });
+    if (!req.user?.id) return res.status(401).json({ message: "Not authorized" });
 
-    const transactions = await Transaction.find({ user: req.user }).sort({ date: -1 });
+    const transactions = await Transaction.find({ user: req.user.id }).sort({ date: -1 });
     res.json({ transactions });
   } catch (error) {
     res.status(500).json({ message: "Error fetching transactions" });
@@ -68,7 +68,7 @@ export const addTransaction = async (req: AuthRequest, res: Response) => {
   console.log("User from token:", req.user);
 
   try {
-    if (!req.user) return res.status(401).json({ message: "Not authorized" });
+    if (!req.user?.id) return res.status(401).json({ message: "Not authorized" });
 
     const { type, amount, date, title, source, lender, category } = req.body;
 
@@ -77,7 +77,7 @@ export const addTransaction = async (req: AuthRequest, res: Response) => {
     }
 
     const transaction = new Transaction({
-      user: req.user,
+      user: req.user.id,
       type,
       amount,
       date: new Date(date),
@@ -95,14 +95,13 @@ export const addTransaction = async (req: AuthRequest, res: Response) => {
   }
 };
 
-
 // 📌 تعديل معاملة
 export const updateTransaction = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user) return res.status(401).json({ message: "Not authorized" });
+    if (!req.user?.id) return res.status(401).json({ message: "Not authorized" });
 
     const transaction = await Transaction.findOneAndUpdate(
-      { _id: req.params.id, user: req.user },
+      { _id: req.params.id, user: req.user.id },
       req.body,
       { new: true }
     );
@@ -118,11 +117,11 @@ export const updateTransaction = async (req: AuthRequest, res: Response) => {
 // 📌 حذف معاملة
 export const deleteTransaction = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user) return res.status(401).json({ message: "Not authorized" });
+    if (!req.user?.id) return res.status(401).json({ message: "Not authorized" });
 
     const transaction = await Transaction.findOneAndDelete({
       _id: req.params.id,
-      user: req.user
+      user: req.user.id
     });
 
     if (!transaction) return res.status(404).json({ message: "Transaction not found" });

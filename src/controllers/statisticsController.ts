@@ -4,7 +4,9 @@ import { AuthRequest } from "../types/AuthRequest";
 
 export const getStatistics = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user) return res.status(401).json({ message: "Not authorized" });
+    if (!req.user?.id) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
 
     const { start, end } = req.query;
     if (!start || !end) {
@@ -20,7 +22,7 @@ export const getStatistics = async (req: AuthRequest, res: Response) => {
     const stats = await Transaction.aggregate([
       {
         $match: {
-          user: req.user,
+          user: req.user.id, // ✅ استخدم الـ id
           date: { $gte: startDate, $lte: endDate }
         }
       },

@@ -5,7 +5,7 @@ import { AuthRequest } from "../types/AuthRequest";
 // إضافة هدف جديد
 export const addGoal = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user) {
+    if (!req.user?.id) {
       return res.status(401).json({ message: "Not authorized" });
     }
 
@@ -16,7 +16,7 @@ export const addGoal = async (req: AuthRequest, res: Response) => {
     }
 
     const goal = await Goal.create({
-      user: req.user,
+      user: req.user.id,
       title,
       targetAmount,
       currentAmount: 0,
@@ -33,11 +33,11 @@ export const addGoal = async (req: AuthRequest, res: Response) => {
 // جلب أهداف المستخدم
 export const getGoals = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user) {
+    if (!req.user?.id) {
       return res.status(401).json({ message: "Not authorized" });
     }
 
-    const goals = await Goal.find({ user: req.user }).sort({ createdAt: -1 });
+    const goals = await Goal.find({ user: req.user.id }).sort({ createdAt: -1 });
     res.json(goals);
   } catch (error) {
     console.error("Error fetching goals:", error);
@@ -48,7 +48,7 @@ export const getGoals = async (req: AuthRequest, res: Response) => {
 // تعديل هدف
 export const updateGoal = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user) {
+    if (!req.user?.id) {
       return res.status(401).json({ message: "Not authorized" });
     }
 
@@ -57,7 +57,7 @@ export const updateGoal = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "Goal not found" });
     }
 
-    if (goal.user.toString() !== req.user.toString()) {
+    if (goal.user.toString() !== req.user.id) {
       return res.status(401).json({ message: "Not authorized" });
     }
 
@@ -79,7 +79,7 @@ export const updateGoal = async (req: AuthRequest, res: Response) => {
 // حذف هدف
 export const deleteGoal = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user) {
+    if (!req.user?.id) {
       return res.status(401).json({ message: "Not authorized" });
     }
 
@@ -88,7 +88,7 @@ export const deleteGoal = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "Goal not found" });
     }
 
-    if (goal.user.toString() !== req.user.toString()) {
+    if (goal.user.toString() !== req.user.id) {
       return res.status(401).json({ message: "Not authorized" });
     }
 
@@ -99,5 +99,6 @@ export const deleteGoal = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: "Error deleting goal" });
   }
 };
+
 
 

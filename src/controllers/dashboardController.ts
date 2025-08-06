@@ -6,9 +6,11 @@ import { AuthRequest } from "../types/AuthRequest";
 // API لجلب ملخص الـ Dashboard
 export const getDashboardStats = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user) return res.status(401).json({ message: "Not authorized" });
+    if (!req.user?.id) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
 
-    const userId = req.user;
+    const userId = req.user.id;
 
     // 1️⃣ إجمالي المصروفات
     const totalExpenses = await Transaction.aggregate([
@@ -48,4 +50,5 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: "Error fetching dashboard stats" });
   }
 };
+
 
