@@ -1,6 +1,7 @@
 import { Goal } from "../models/Goal";
 import { Response } from "express";
 import { AuthRequest } from "../types/AuthRequest";
+import { getIO } from "../socket";
 
 // إضافة هدف جديد
 export const addGoal = async (req: AuthRequest, res: Response) => {
@@ -12,7 +13,9 @@ export const addGoal = async (req: AuthRequest, res: Response) => {
     const { title, targetAmount, currentAmount = 0, deadline } = req.body;
 
     if (!title || !targetAmount || !deadline) {
-      return res.status(400).json({ message: "Please provide all required fields" });
+      return res
+        .status(400)
+        .json({ message: "Please provide all required fields" });
     }
 
     const goal = await Goal.create({
@@ -23,32 +26,16 @@ export const addGoal = async (req: AuthRequest, res: Response) => {
       deadline,
     });
 
+    getIO().to(req.user.id).emit("notification", {
+      type: "goal",
+      action: "added",
+      data: goal,
+    });
+
     res.status(201).json(goal);
   } catch (error) {
     console.error("Error adding goal:", error);
     res.status(500).json({ message: "Error adding goal" });
-  }
-};
-
-// جلب أهداف المستخدم
-export const getGoals = async (req: AuthRequest, res: Response) => {
-  try {
-    if (!req.user?.id) {
-      return res.status(401).json({ message: "Not authorized" });
-    }
-
-    const goals = await Goal.find({ user: req.user.id }).sort({ createdAt: -1 });
-
-    // ضمان وجود currentAmount
-    const goalsWithDefault = goals.map(goal => ({
-      ...goal.toObject(),
-      currentAmount: goal.currentAmount ?? 0
-    }));
-
-    res.json(goalsWithDefault);
-  } catch (error) {
-    console.error("Error fetching goals:", error);
-    res.status(500).json({ message: "Error fetching goals" });
   }
 };
 
@@ -76,6 +63,13 @@ export const updateGoal = async (req: AuthRequest, res: Response) => {
     if (deadline !== undefined) goal.deadline = deadline;
 
     const updatedGoal = await goal.save();
+
+    getIO().to(req.user.id).emit("notification", {
+      type: "goal",
+      action: "updated",
+      data: updatedGoal
+    });
+
     res.json(updatedGoal);
   } catch (error) {
     console.error("Error updating goal:", error);
@@ -99,7 +93,15 @@ export const deleteGoal = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ message: "Not authorized" });
     }
 
+    const deletedTitle = goal.title;
     await goal.deleteOne();
+
+      getIO().to(req.user.id).emit("notification", {
+      type: "goal",
+      action: "deleted",
+      data: { id: req.params.id }
+    });
+
     res.json({ message: "Goal removed" });
   } catch (error) {
     console.error("Error deleting goal:", error);
@@ -107,5 +109,26 @@ export const deleteGoal = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// جلب أهداف المستخدم
+export const getGoals = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
 
+    const goals = await Goal.find({ user: req.user.id }).sort({
+      createdAt: -1,
+    });
 
+    // ضمان وجود currentAmount
+    const goalsWithDefault = goals.map((goal) => ({
+      ...goal.toObject(),
+      currentAmount: goal.currentAmount ?? 0,
+    }));
+
+    res.json(goalsWithDefault);
+  } catch (error) {
+    console.error("Error fetching goals:", error);
+    res.status(500).json({ message: "Error fetching goals" });
+  }
+};

@@ -1,5 +1,6 @@
 import { Response } from "express";
 import { Transaction } from "../models/Transaction";
+import { getIO } from "../socket";
 import { AuthRequest } from "../types/AuthRequest";
 
 export const getTransactionsWithFilters = async (req: AuthRequest, res: Response) => {
@@ -13,7 +14,6 @@ export const getTransactionsWithFilters = async (req: AuthRequest, res: Response
 
     const filter: any = { user: userId };
 
-    // ✅ السماح بالـ debt بجانب income و expense
     if (req.query.type) {
       const type = req.query.type.toString().toLowerCase();
       if (!["income", "expense", "debt"].includes(type)) {
@@ -50,7 +50,6 @@ export const getTransactionsWithFilters = async (req: AuthRequest, res: Response
   }
 };
 
-// 📌 جلب كل المعاملات
 export const getAllTransactions = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user?.id) return res.status(401).json({ message: "Not authorized" });
@@ -62,11 +61,7 @@ export const getAllTransactions = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// 📌 إضافة معاملة جديدة
 export const addTransaction = async (req: AuthRequest, res: Response) => {
-  console.log("Incoming transaction:", req.body);
-  console.log("User from token:", req.user);
-
   try {
     if (!req.user?.id) return res.status(401).json({ message: "Not authorized" });
 
@@ -88,6 +83,14 @@ export const addTransaction = async (req: AuthRequest, res: Response) => {
     });
 
     await transaction.save();
+
+    // 🔔 إرسال إشعار للمستخدم نفسه فقط
+    getIO().to(req.user.id).emit("notification", {
+      type: "transaction",
+      action: "added",
+      data: transaction
+    });
+
     res.status(201).json(transaction);
   } catch (error) {
     console.error("Error adding transaction:", error);
@@ -95,7 +98,6 @@ export const addTransaction = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// 📌 تعديل معاملة
 export const updateTransaction = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user?.id) return res.status(401).json({ message: "Not authorized" });
@@ -108,13 +110,19 @@ export const updateTransaction = async (req: AuthRequest, res: Response) => {
 
     if (!transaction) return res.status(404).json({ message: "Transaction not found" });
 
+    // 🔔 إرسال إشعار
+    getIO().to(req.user.id).emit("notification", {
+      type: "transaction",
+      action: "updated",
+      data: transaction
+    });
+
     res.json(transaction);
   } catch (error) {
     res.status(500).json({ message: "Error updating transaction" });
   }
 };
 
-// 📌 حذف معاملة
 export const deleteTransaction = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user?.id) return res.status(401).json({ message: "Not authorized" });
@@ -126,10 +134,15 @@ export const deleteTransaction = async (req: AuthRequest, res: Response) => {
 
     if (!transaction) return res.status(404).json({ message: "Transaction not found" });
 
+    // 🔔 إرسال إشعار
+    getIO().to(req.user.id).emit("notification", {
+      type: "transaction",
+      action: "deleted",
+      data: { id: req.params.id }
+    });
+
     res.json({ message: "Transaction deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error deleting transaction" });
   }
 };
-
-
