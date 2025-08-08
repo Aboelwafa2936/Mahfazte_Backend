@@ -9,7 +9,7 @@ export const addGoal = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ message: "Not authorized" });
     }
 
-    const { title, targetAmount, deadline } = req.body;
+    const { title, targetAmount, currentAmount = 0, deadline } = req.body;
 
     if (!title || !targetAmount || !deadline) {
       return res.status(400).json({ message: "Please provide all required fields" });
@@ -19,7 +19,7 @@ export const addGoal = async (req: AuthRequest, res: Response) => {
       user: req.user.id,
       title,
       targetAmount,
-      currentAmount: 0,
+      currentAmount,
       deadline,
     });
 

@@ -31,14 +31,41 @@ const validateAddGoal = [
     .isString()
     .isLength({ min: 3 })
     .withMessage("Title must be at least 3 characters"),
+    
   body("targetAmount")
     .isNumeric()
-    .withMessage("Target amount must be a number"),
+    .withMessage("Target amount must be a number")
+    .custom((value) => value > 0)
+    .withMessage("Target amount must be greater than zero"),
+  
+  body("currentAmount")
+    .optional() // عشان لو المستخدم ما بعتهاش تشتغل
+    .isNumeric()
+    .withMessage("Current amount must be a number")
+    .custom((value, { req }) => {
+      if (value < 0) {
+        throw new Error("Current amount cannot be negative");
+      }
+      if (value > req.body.targetAmount) {
+        throw new Error("Current amount cannot exceed target amount");
+      }
+      return true;
+    }),
+
   body("deadline")
     .isISO8601()
-    .withMessage("Deadline must be a valid date in ISO8601 format"),
+    .withMessage("Deadline must be a valid date in ISO8601 format")
+    .custom((value) => {
+      const selectedDate = new Date(value);
+      if (selectedDate < new Date()) {
+        throw new Error("Deadline must be in the future");
+      }
+      return true;
+    }),
+
   handleValidationErrors
 ];
+
 
 /**
  * 📌 فاليديشن لتعديل هدف
