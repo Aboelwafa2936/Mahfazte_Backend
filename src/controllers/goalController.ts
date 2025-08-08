@@ -38,7 +38,14 @@ export const getGoals = async (req: AuthRequest, res: Response) => {
     }
 
     const goals = await Goal.find({ user: req.user.id }).sort({ createdAt: -1 });
-    res.json(goals);
+
+    // ضمان وجود currentAmount
+    const goalsWithDefault = goals.map(goal => ({
+      ...goal.toObject(),
+      currentAmount: goal.currentAmount ?? 0
+    }));
+
+    res.json(goalsWithDefault);
   } catch (error) {
     console.error("Error fetching goals:", error);
     res.status(500).json({ message: "Error fetching goals" });
