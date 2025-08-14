@@ -2,6 +2,7 @@ import { Response } from "express";
 import { Transaction } from "../models/Transaction";
 import { getIO } from "../socket";
 import { AuthRequest } from "../types/AuthRequest";
+import { notifyUser } from "../utils/notifyUser";
 
 export const getTransactionsWithFilters = async (
   req: AuthRequest,
@@ -94,7 +95,8 @@ export const addTransaction = async (req: AuthRequest, res: Response) => {
     await transaction.save();
 
     // 🔔 إرسال إشعار للمستخدم نفسه فقط
-    getIO().to(req.user.id).emit("notification", {
+    notifyUser(req.user.id, {
+      id: transaction.id.toString(),
       type: "transaction",
       action: "added",
       data: transaction,
@@ -130,9 +132,9 @@ export const updateTransaction = async (req: AuthRequest, res: Response) => {
       "📌 Current Socket Rooms:",
       JSON.stringify(socketRooms, null, 2)
     );
-
     // 🔔 إرسال إشعار
-    getIO().to(req.user.id).emit("notification", {
+    notifyUser(req.user.id, {
+      id: transaction.id.toString(),
       type: "transaction",
       action: "updated",
       data: transaction,
@@ -158,13 +160,12 @@ export const deleteTransaction = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "Transaction not found" });
 
     // 🔔 إرسال إشعار
-    getIO()
-      .to(req.user.id)
-      .emit("notification", {
-        type: "transaction",
-        action: "deleted",
-        data: { id: req.params.id },
-      });
+    notifyUser(req.user.id, {
+      id: transaction.id.toString(),
+      type: "transaction",
+      action: "deleted",
+      data: transaction,
+    });
 
     res.json({ message: "Transaction deleted successfully" });
   } catch (error) {

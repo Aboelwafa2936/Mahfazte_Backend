@@ -2,6 +2,7 @@ import { Goal } from "../models/Goal";
 import { Response } from "express";
 import { AuthRequest } from "../types/AuthRequest";
 import { getIO } from "../socket";
+import { notifyUser } from "../utils/notifyUser";
 
 // إضافة هدف جديد
 export const addGoal = async (req: AuthRequest, res: Response) => {
@@ -26,7 +27,8 @@ export const addGoal = async (req: AuthRequest, res: Response) => {
       deadline,
     });
 
-    getIO().to(req.user.id).emit("notification", {
+    notifyUser(req.user.id, {
+      id: goal._id.toString(),
       type: "goal",
       action: "added",
       data: goal,
@@ -64,10 +66,11 @@ export const updateGoal = async (req: AuthRequest, res: Response) => {
 
     const updatedGoal = await goal.save();
 
-    getIO().to(req.user.id).emit("notification", {
+    notifyUser(req.user.id, {
+      id: goal._id.toString(),
       type: "goal",
       action: "updated",
-      data: updatedGoal
+      data: goal,
     });
 
     res.json(updatedGoal);
@@ -95,11 +98,11 @@ export const deleteGoal = async (req: AuthRequest, res: Response) => {
 
     const deletedTitle = goal.title;
     await goal.deleteOne();
-
-      getIO().to(req.user.id).emit("notification", {
+    notifyUser(req.user.id, {
+      id: goal._id.toString(),
       type: "goal",
       action: "deleted",
-      data: { id: req.params.id }
+      data: goal,
     });
 
     res.json({ message: "Goal removed" });
