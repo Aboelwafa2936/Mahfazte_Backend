@@ -3,9 +3,13 @@ import { Transaction } from "../models/Transaction";
 import { getIO } from "../socket";
 import { AuthRequest } from "../types/AuthRequest";
 
-export const getTransactionsWithFilters = async (req: AuthRequest, res: Response) => {
+export const getTransactionsWithFilters = async (
+  req: AuthRequest,
+  res: Response
+) => {
   try {
-    if (!req.user?.id) return res.status(401).json({ message: "Not authorized" });
+    if (!req.user?.id)
+      return res.status(401).json({ message: "Not authorized" });
 
     const userId = req.user.id;
     const page = Number(req.query.page) || 1;
@@ -42,9 +46,8 @@ export const getTransactionsWithFilters = async (req: AuthRequest, res: Response
       page,
       totalPages: Math.ceil(total / limit),
       totalRecords: total,
-      transactions
+      transactions,
     });
-
   } catch (error) {
     res.status(500).json({ message: "Error fetching transactions" });
   }
@@ -52,9 +55,12 @@ export const getTransactionsWithFilters = async (req: AuthRequest, res: Response
 
 export const getAllTransactions = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user?.id) return res.status(401).json({ message: "Not authorized" });
+    if (!req.user?.id)
+      return res.status(401).json({ message: "Not authorized" });
 
-    const transactions = await Transaction.find({ user: req.user.id }).sort({ date: -1 });
+    const transactions = await Transaction.find({ user: req.user.id }).sort({
+      date: -1,
+    });
     res.json({ transactions });
   } catch (error) {
     res.status(500).json({ message: "Error fetching transactions" });
@@ -63,12 +69,15 @@ export const getAllTransactions = async (req: AuthRequest, res: Response) => {
 
 export const addTransaction = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user?.id) return res.status(401).json({ message: "Not authorized" });
+    if (!req.user?.id)
+      return res.status(401).json({ message: "Not authorized" });
 
     const { type, amount, date, title, source, lender, category } = req.body;
 
     if (!type || !amount || !date) {
-      return res.status(400).json({ message: "Type, amount, and date are required" });
+      return res
+        .status(400)
+        .json({ message: "Type, amount, and date are required" });
     }
 
     const transaction = new Transaction({
@@ -79,7 +88,7 @@ export const addTransaction = async (req: AuthRequest, res: Response) => {
       title,
       source,
       lender,
-      category
+      category,
     });
 
     await transaction.save();
@@ -88,7 +97,7 @@ export const addTransaction = async (req: AuthRequest, res: Response) => {
     getIO().to(req.user.id).emit("notification", {
       type: "transaction",
       action: "added",
-      data: transaction
+      data: transaction,
     });
 
     res.status(201).json(transaction);
@@ -100,7 +109,8 @@ export const addTransaction = async (req: AuthRequest, res: Response) => {
 
 export const updateTransaction = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user?.id) return res.status(401).json({ message: "Not authorized" });
+    if (!req.user?.id)
+      return res.status(401).json({ message: "Not authorized" });
 
     const transaction = await Transaction.findOneAndUpdate(
       { _id: req.params.id, user: req.user.id },
@@ -108,13 +118,24 @@ export const updateTransaction = async (req: AuthRequest, res: Response) => {
       { new: true }
     );
 
-    if (!transaction) return res.status(404).json({ message: "Transaction not found" });
+    if (!transaction)
+      return res.status(404).json({ message: "Transaction not found" });
+
+    const socketRooms = [];
+    for (let [id, socket] of getIO().sockets.sockets) {
+      socketRooms.push({ socketId: id, rooms: Array.from(socket.rooms) });
+    }
+
+    console.log(
+      "📌 Current Socket Rooms:",
+      JSON.stringify(socketRooms, null, 2)
+    );
 
     // 🔔 إرسال إشعار
     getIO().to(req.user.id).emit("notification", {
       type: "transaction",
       action: "updated",
-      data: transaction
+      data: transaction,
     });
 
     res.json(transaction);
@@ -125,21 +146,25 @@ export const updateTransaction = async (req: AuthRequest, res: Response) => {
 
 export const deleteTransaction = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user?.id) return res.status(401).json({ message: "Not authorized" });
+    if (!req.user?.id)
+      return res.status(401).json({ message: "Not authorized" });
 
     const transaction = await Transaction.findOneAndDelete({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     });
 
-    if (!transaction) return res.status(404).json({ message: "Transaction not found" });
+    if (!transaction)
+      return res.status(404).json({ message: "Transaction not found" });
 
     // 🔔 إرسال إشعار
-    getIO().to(req.user.id).emit("notification", {
-      type: "transaction",
-      action: "deleted",
-      data: { id: req.params.id }
-    });
+    getIO()
+      .to(req.user.id)
+      .emit("notification", {
+        type: "transaction",
+        action: "deleted",
+        data: { id: req.params.id },
+      });
 
     res.json({ message: "Transaction deleted successfully" });
   } catch (error) {
